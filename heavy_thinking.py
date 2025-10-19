@@ -297,6 +297,8 @@ Provide a well-structured, thorough response that represents the collective inte
             agent_results = []
             
             # Run agents sequentially instead of in parallel
+            loop = asyncio.get_event_loop()
+            
             for i in range(num_agents):
                 if i >= len(questions):
                     raise ValueError(f"Question list index {i} out of range (list has {len(questions)} questions)")
@@ -313,7 +315,9 @@ Provide a well-structured, thorough response that represents the collective inte
                     )
                 
                 try:
-                    result = self._run_thinking_agent(i, questions[i])
+                    # Run in executor to avoid blocking the event loop
+                    with ThreadPoolExecutor(max_workers=1) as executor:
+                        result = await loop.run_in_executor(executor, self._run_thinking_agent, i, questions[i])
                     agent_results.append(result)
                     
                     status_icon = "✅" if result["status"] == "success" else "❌"
