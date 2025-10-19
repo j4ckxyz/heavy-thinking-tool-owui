@@ -123,12 +123,15 @@ Return ONLY a valid JSON array of {num_agents} strings, nothing else. Example fo
 
         except Exception as e:
             print(f"Question generation failed: {e}, using fallback")
-            return [
+            fallback = [
                 f"Research comprehensive information about: {query}",
                 f"Analyze and provide insights about: {query}",
                 f"Find alternative perspectives on: {query}",
                 f"Verify and cross-check facts about: {query}",
-            ][:num_agents]
+            ]
+            while len(fallback) < num_agents:
+                fallback.append(f"Analyze aspect {len(fallback) + 1} of: {query}")
+            return fallback[:num_agents]
 
     def _run_thinking_agent(self, agent_id: int, question: str) -> Dict[str, Any]:
         try:
@@ -266,6 +269,9 @@ Provide a well-structured, thorough response that represents the collective inte
                 )
 
             questions = self._generate_research_questions(query, num_agents)
+            
+            if len(questions) != num_agents:
+                raise ValueError(f"Expected {num_agents} questions but got {len(questions)}")
 
             if __event_emitter__:
                 questions_preview = "\n".join([f"  • Agent {i+1}: {q[:80]}..." for i, q in enumerate(questions)])
@@ -299,12 +305,13 @@ Provide a well-structured, thorough response that represents the collective inte
                         status_icon = "✅" if result["status"] == "success" else "❌"
                         
                         if __event_emitter__:
+                            question_preview = questions[agent_id][:60] if agent_id < len(questions) else "..."
                             asyncio.create_task(
                                 __event_emitter__(
                                     {
                                         "type": "status",
                                         "data": {
-                                            "description": f"{status_icon} Agent {i}/{num_agents} completed ({num_agents - i} remaining)\nFocus: {questions[agent_id][:60]}...",
+                                            "description": f"{status_icon} Agent {i}/{num_agents} completed ({num_agents - i} remaining)\nFocus: {question_preview}...",
                                             "done": False,
                                         },
                                     }
@@ -313,12 +320,13 @@ Provide a well-structured, thorough response that represents the collective inte
                             await asyncio.sleep(0.01)
                     except Exception as e:
                         agent_id = future_to_agent[future]
+                        agent_question = questions[agent_id] if agent_id < len(questions) else f"Agent {agent_id + 1} research"
                         agent_results.append(
                             {
                                 "agent_id": agent_id,
                                 "status": "timeout",
                                 "response": f"Agent {agent_id + 1} timed out or failed: {str(e)}",
-                                "question": questions[agent_id],
+                                "question": agent_question,
                             }
                         )
                         
