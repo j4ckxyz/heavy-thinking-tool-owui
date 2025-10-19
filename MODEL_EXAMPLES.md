@@ -92,6 +92,7 @@ o1-mini                         # Reasoning model (cheaper)
 HEAVY_THINKING_PROVIDER = "openai"
 HEAVY_THINKING_API_KEY = "sk-proj-..."
 HEAVY_THINKING_MODEL = "gpt-4o-mini"
+# Base URL auto-set to: https://api.openai.com/v1
 ```
 
 ### Model Selection Guide
@@ -134,6 +135,7 @@ claude-3-haiku-20240307         # Budget: fast and cheap
 HEAVY_THINKING_PROVIDER = "anthropic"
 HEAVY_THINKING_API_KEY = "sk-ant-..."
 HEAVY_THINKING_MODEL = "claude-3-5-haiku-20241022"
+# Base URL auto-set to: https://api.anthropic.com/v1
 ```
 
 ### Model Selection Guide
@@ -158,64 +160,52 @@ Visit https://docs.anthropic.com/en/docs/models-overview for the latest model na
 
 ## Google Gemini
 
-Google uses two naming formats depending on how you access the API.
+Google uses simple model names (works via OpenAI-compatible endpoint).
 
-### Via Google AI Studio API
-
-Use the `models/` prefix:
+### Available Models
 
 ```
-models/gemini-2.0-flash-exp     # Latest experimental
-models/gemini-flash-latest      # Latest stable flash
-models/gemini-pro-latest        # Latest stable pro
-models/gemini-1.5-flash         # Specific version
-models/gemini-1.5-pro           # Specific version
+gemini-2.0-flash-exp            # Latest experimental, fast
+gemini-2.5-flash                # Recommended: fast, good quality
+gemini-2.5-pro                  # Best quality, advanced reasoning
+gemini-1.5-flash                # Stable version, reliable
+gemini-1.5-pro                  # Previous gen, still great
 ```
 
-### Via Google Cloud Vertex AI
-
-Without `models/` prefix:
-
-```
-gemini-2.0-flash-exp
-gemini-flash-latest
-gemini-pro-latest
-gemini-1.5-flash
-gemini-1.5-pro
-```
-
-### Configuration Example (AI Studio)
+### Configuration Example (Recommended)
 
 ```python
 HEAVY_THINKING_PROVIDER = "google"
 HEAVY_THINKING_API_KEY = "AIza..."
-HEAVY_THINKING_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
-HEAVY_THINKING_MODEL = "models/gemini-2.0-flash-exp"
+HEAVY_THINKING_MODEL = "gemini-2.5-flash"
+# Base URL auto-set to: https://generativelanguage.googleapis.com/v1beta/openai/
 ```
 
-### Configuration Example (Vertex AI)
+### Configuration Example (Vertex AI - Advanced)
+
+If you need to use Google Cloud Vertex AI instead:
 
 ```python
 HEAVY_THINKING_PROVIDER = "custom"
 HEAVY_THINKING_API_KEY = "your-gcp-key"
-HEAVY_THINKING_BASE_URL = "https://YOUR-REGION-aiplatform.googleapis.com/v1"
-HEAVY_THINKING_MODEL = "gemini-2.0-flash-exp"
+HEAVY_THINKING_BASE_URL = "https://YOUR-REGION-aiplatform.googleapis.com/v1/openai"
+HEAVY_THINKING_MODEL = "gemini-2.5-flash"
 ```
 
 ### Model Selection Guide
 
-**For most use cases**: `models/gemini-2.0-flash-exp` or `models/gemini-flash-latest`
+**For most use cases**: `gemini-2.5-flash`
 - Very fast
 - Often has free tier
-- Good quality
+- Great quality
 
-**For production**: `models/gemini-1.5-flash`
+**For production**: `gemini-1.5-flash`
 - Stable version
 - Reliable performance
 
-**For best quality**: `models/gemini-1.5-pro`
-- Higher quality reasoning
-- More expensive
+**For best quality**: `gemini-2.5-pro`
+- Advanced reasoning and thinking
+- Higher quality, more expensive
 
 ### Free Tier
 

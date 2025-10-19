@@ -30,8 +30,8 @@ class Tools:
             description="API key for the selected provider"
         )
         HEAVY_THINKING_BASE_URL: str = Field(
-            default="https://openrouter.ai/api/v1",
-            description="Base URL for API (used for custom providers or OpenRouter)"
+            default="",
+            description="Base URL for API (only needed for 'custom' provider - auto-set for openrouter/openai/anthropic/google)"
         )
         HEAVY_THINKING_MODEL: str = Field(
             default="openai/gpt-4o-mini",
@@ -58,13 +58,13 @@ class Tools:
             )
 
         if provider == "openrouter":
-            base_url = self.valves.HEAVY_THINKING_BASE_URL or "https://openrouter.ai/api/v1"
+            base_url = "https://openrouter.ai/api/v1"
         elif provider == "openai":
             base_url = "https://api.openai.com/v1"
         elif provider == "anthropic":
             base_url = "https://api.anthropic.com/v1"
         elif provider == "google":
-            base_url = "https://generativelanguage.googleapis.com/v1beta"
+            base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
         elif provider == "custom":
             base_url = self.valves.HEAVY_THINKING_BASE_URL
             if not base_url:
