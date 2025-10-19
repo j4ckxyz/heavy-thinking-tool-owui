@@ -117,12 +117,14 @@ Return ONLY a valid JSON array of {num_agents} strings, nothing else. Example fo
             questions = json.loads(content)
 
             if not isinstance(questions, list) or len(questions) != num_agents:
-                raise ValueError("Invalid question format")
+                raise ValueError(f"Invalid question format: got {type(questions)} with {len(questions) if isinstance(questions, list) else 'N/A'} items")
 
             return questions
 
         except Exception as e:
             print(f"Question generation failed: {e}, using fallback")
+            import traceback
+            traceback.print_exc()
             fallback = [
                 f"Research comprehensive information about: {query}",
                 f"Analyze and provide insights about: {query}",
@@ -131,7 +133,9 @@ Return ONLY a valid JSON array of {num_agents} strings, nothing else. Example fo
             ]
             while len(fallback) < num_agents:
                 fallback.append(f"Analyze aspect {len(fallback) + 1} of: {query}")
-            return fallback[:num_agents]
+            result = fallback[:num_agents]
+            print(f"Generated {len(result)} fallback questions for {num_agents} agents")
+            return result
 
     def _run_thinking_agent(self, agent_id: int, question: str) -> Dict[str, Any]:
         try:
@@ -270,8 +274,8 @@ Provide a well-structured, thorough response that represents the collective inte
 
             questions = self._generate_research_questions(query, num_agents)
             
-            if len(questions) != num_agents:
-                raise ValueError(f"Expected {num_agents} questions but got {len(questions)}")
+            if not questions or len(questions) != num_agents:
+                raise ValueError(f"Expected {num_agents} questions but got {len(questions) if questions else 0}")
 
             if __event_emitter__:
                 questions_preview = "\n".join([f"  • Agent {i+1}: {q[:80]}..." for i, q in enumerate(questions)])
@@ -288,10 +292,11 @@ Provide a well-structured, thorough response that represents the collective inte
 
             agent_results = []
             with ThreadPoolExecutor(max_workers=num_agents) as executor:
-                future_to_agent = {
-                    executor.submit(self._run_thinking_agent, i, questions[i]): i
-                    for i in range(num_agents)
-                }
+                future_to_agent = {}
+                for i in range(num_agents):
+                    if i >= len(questions):
+                        raise ValueError(f"Question list index {i} out of range (list has {len(questions)} questions)")
+                    future_to_agent[executor.submit(self._run_thinking_agent, i, questions[i])] = i
 
                 for i, future in enumerate(
                     as_completed(future_to_agent, timeout=self.valves.HEAVY_THINKING_TIMEOUT),
