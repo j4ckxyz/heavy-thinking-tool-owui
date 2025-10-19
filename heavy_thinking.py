@@ -278,6 +278,7 @@ Provide a well-structured, thorough response that represents the collective inte
                         },
                     }
                 )
+                await asyncio.sleep(0.1)
 
             agent_results = []
             with ThreadPoolExecutor(max_workers=num_agents) as executor:
@@ -298,15 +299,18 @@ Provide a well-structured, thorough response that represents the collective inte
                         status_icon = "✅" if result["status"] == "success" else "❌"
                         
                         if __event_emitter__:
-                            await __event_emitter__(
-                                {
-                                    "type": "status",
-                                    "data": {
-                                        "description": f"{status_icon} Agent {i}/{num_agents} completed ({num_agents - i} remaining)\nFocus: {questions[agent_id][:60]}...",
-                                        "done": False,
-                                    },
-                                }
+                            asyncio.create_task(
+                                __event_emitter__(
+                                    {
+                                        "type": "status",
+                                        "data": {
+                                            "description": f"{status_icon} Agent {i}/{num_agents} completed ({num_agents - i} remaining)\nFocus: {questions[agent_id][:60]}...",
+                                            "done": False,
+                                        },
+                                    }
+                                )
                             )
+                            await asyncio.sleep(0.01)
                     except Exception as e:
                         agent_id = future_to_agent[future]
                         agent_results.append(
@@ -319,15 +323,18 @@ Provide a well-structured, thorough response that represents the collective inte
                         )
                         
                         if __event_emitter__:
-                            await __event_emitter__(
-                                {
-                                    "type": "status",
-                                    "data": {
-                                        "description": f"⚠️ Agent {agent_id + 1} timeout/error: {str(e)[:50]}...",
-                                        "done": False,
-                                    },
-                                }
+                            asyncio.create_task(
+                                __event_emitter__(
+                                    {
+                                        "type": "status",
+                                        "data": {
+                                            "description": f"⚠️ Agent {agent_id + 1} timeout/error: {str(e)[:50]}...",
+                                            "done": False,
+                                        },
+                                    }
+                                )
                             )
+                            await asyncio.sleep(0.01)
 
             agent_results.sort(key=lambda x: x["agent_id"])
 
@@ -343,6 +350,7 @@ Provide a well-structured, thorough response that represents the collective inte
                         },
                     }
                 )
+                await asyncio.sleep(0.1)
 
             final_result = self._synthesize_responses(query, agent_results)
 
