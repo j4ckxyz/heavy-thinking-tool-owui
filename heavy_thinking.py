@@ -265,12 +265,13 @@ Provide a well-structured, thorough response that represents the collective inte
             questions = self._generate_research_questions(query, num_agents)
 
             if __event_emitter__:
+                questions_preview = "\n".join([f"  • Agent {i+1}: {q[:80]}..." for i, q in enumerate(questions)])
                 asyncio.create_task(
                     __event_emitter__(
                         {
                             "type": "status",
                             "data": {
-                                "description": f"🔄 Deploying {num_agents} thinking agents in parallel...",
+                                "description": f"🔄 Deploying {num_agents} thinking agents in parallel:\n{questions_preview}",
                                 "done": False,
                             },
                         }
@@ -291,14 +292,17 @@ Provide a well-structured, thorough response that represents the collective inte
                     try:
                         result = future.result()
                         agent_results.append(result)
-
+                        
+                        agent_id = result["agent_id"]
+                        status_icon = "✅" if result["status"] == "success" else "❌"
+                        
                         if __event_emitter__:
                             asyncio.create_task(
                                 __event_emitter__(
                                     {
                                         "type": "status",
                                         "data": {
-                                            "description": f"✅ Agent {i}/{num_agents} completed",
+                                            "description": f"{status_icon} Agent {i}/{num_agents} completed ({num_agents - i} remaining)\nFocus: {questions[agent_id][:60]}...",
                                             "done": False,
                                         },
                                     }
@@ -314,16 +318,31 @@ Provide a well-structured, thorough response that represents the collective inte
                                 "question": questions[agent_id],
                             }
                         )
+                        
+                        if __event_emitter__:
+                            asyncio.create_task(
+                                __event_emitter__(
+                                    {
+                                        "type": "status",
+                                        "data": {
+                                            "description": f"⚠️ Agent {agent_id + 1} timeout/error: {str(e)[:50]}...",
+                                            "done": False,
+                                        },
+                                    }
+                                )
+                            )
 
             agent_results.sort(key=lambda x: x["agent_id"])
 
+            successful_count = sum(1 for r in agent_results if r["status"] == "success")
+            
             if __event_emitter__:
                 asyncio.create_task(
                     __event_emitter__(
                         {
                             "type": "status",
                             "data": {
-                                "description": "🔮 Synthesizing insights from all agents...",
+                                "description": f"🔮 Synthesizing insights from {successful_count}/{num_agents} successful agents...",
                                 "done": False,
                             },
                         }
@@ -338,7 +357,7 @@ Provide a well-structured, thorough response that represents the collective inte
                         {
                             "type": "status",
                             "data": {
-                                "description": "✨ Heavy thinking complete!",
+                                "description": f"✨ Heavy thinking complete! ({successful_count}/{num_agents} agents contributed)",
                                 "done": True,
                             },
                         }
