@@ -173,6 +173,10 @@ Provide a complete, detailed response."""
 
         except Exception as e:
             error_msg = str(e)
+            print(f"Agent {agent_id + 1} error: {error_msg}")
+            import traceback
+            traceback.print_exc()
+            
             if "google" in self.valves.HEAVY_THINKING_PROVIDER.lower():
                 error_msg += "\n\nNote: For easier Google Gemini access, use provider='openrouter' with model='google/gemini-2.5-flash' instead of direct Google API."
             
@@ -298,12 +302,11 @@ Provide a well-structured, thorough response that represents the collective inte
                     raise ValueError(f"Question list index {i} out of range (list has {len(questions)} questions)")
                 
                 if __event_emitter__:
-                    question_preview = questions[i][:60]
                     await __event_emitter__(
                         {
                             "type": "status",
                             "data": {
-                                "description": f"🔄 Running Agent {i+1}/{num_agents}\nFocus: {question_preview}...",
+                                "description": f"🔄 Running Agent {i+1}/{num_agents}\n\nQuestion: {questions[i]}",
                                 "done": False,
                             },
                         }
@@ -316,21 +319,38 @@ Provide a well-structured, thorough response that represents the collective inte
                     status_icon = "✅" if result["status"] == "success" else "❌"
                     
                     if __event_emitter__:
-                        await __event_emitter__(
-                            {
-                                "type": "status",
-                                "data": {
-                                    "description": f"{status_icon} Agent {i+1}/{num_agents} completed\nFocus: {question_preview}...",
-                                    "done": False,
-                                },
-                            }
-                        )
+                        if result["status"] == "error":
+                            error_preview = result["response"][:200]
+                            await __event_emitter__(
+                                {
+                                    "type": "status",
+                                    "data": {
+                                        "description": f"{status_icon} Agent {i+1}/{num_agents} failed\n\nError: {error_preview}",
+                                        "done": False,
+                                    },
+                                }
+                            )
+                        else:
+                            await __event_emitter__(
+                                {
+                                    "type": "status",
+                                    "data": {
+                                        "description": f"{status_icon} Agent {i+1}/{num_agents} completed successfully",
+                                        "done": False,
+                                    },
+                                }
+                            )
                 except Exception as e:
+                    error_msg = str(e)
+                    print(f"Agent {i+1} exception: {error_msg}")
+                    import traceback
+                    traceback.print_exc()
+                    
                     agent_results.append(
                         {
                             "agent_id": i,
                             "status": "error",
-                            "response": f"Agent {i + 1} failed: {str(e)}",
+                            "response": f"Agent {i + 1} failed: {error_msg}",
                             "question": questions[i],
                         }
                     )
@@ -340,7 +360,7 @@ Provide a well-structured, thorough response that represents the collective inte
                             {
                                 "type": "status",
                                 "data": {
-                                    "description": f"❌ Agent {i + 1} error: {str(e)[:50]}...",
+                                    "description": f"❌ Agent {i + 1} exception\n\nError: {error_msg[:200]}",
                                     "done": False,
                                 },
                             }
