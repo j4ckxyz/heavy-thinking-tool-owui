@@ -291,63 +291,60 @@ Provide a well-structured, thorough response that represents the collective inte
                 await asyncio.sleep(0.1)
 
             agent_results = []
-            with ThreadPoolExecutor(max_workers=num_agents) as executor:
-                future_to_agent = {}
-                for i in range(num_agents):
-                    if i >= len(questions):
-                        raise ValueError(f"Question list index {i} out of range (list has {len(questions)} questions)")
-                    future_to_agent[executor.submit(self._run_thinking_agent, i, questions[i])] = i
-
-                for i, future in enumerate(
-                    as_completed(future_to_agent, timeout=self.valves.HEAVY_THINKING_TIMEOUT),
-                    1
-                ):
-                    try:
-                        result = future.result()
-                        agent_results.append(result)
-                        
-                        agent_id = result["agent_id"]
-                        status_icon = "✅" if result["status"] == "success" else "❌"
-                        
-                        if __event_emitter__:
-                            question_preview = questions[agent_id][:60] if agent_id < len(questions) else "..."
-                            asyncio.create_task(
-                                __event_emitter__(
-                                    {
-                                        "type": "status",
-                                        "data": {
-                                            "description": f"{status_icon} Agent {i}/{num_agents} completed ({num_agents - i} remaining)\nFocus: {question_preview}...",
-                                            "done": False,
-                                        },
-                                    }
-                                )
-                            )
-                            await asyncio.sleep(0.01)
-                    except Exception as e:
-                        agent_id = future_to_agent[future]
-                        agent_question = questions[agent_id] if agent_id < len(questions) else f"Agent {agent_id + 1} research"
-                        agent_results.append(
+            
+            # Run agents sequentially instead of in parallel
+            for i in range(num_agents):
+                if i >= len(questions):
+                    raise ValueError(f"Question list index {i} out of range (list has {len(questions)} questions)")
+                
+                if __event_emitter__:
+                    question_preview = questions[i][:60]
+                    await __event_emitter__(
+                        {
+                            "type": "status",
+                            "data": {
+                                "description": f"🔄 Running Agent {i+1}/{num_agents}\nFocus: {question_preview}...",
+                                "done": False,
+                            },
+                        }
+                    )
+                
+                try:
+                    result = self._run_thinking_agent(i, questions[i])
+                    agent_results.append(result)
+                    
+                    status_icon = "✅" if result["status"] == "success" else "❌"
+                    
+                    if __event_emitter__:
+                        await __event_emitter__(
                             {
-                                "agent_id": agent_id,
-                                "status": "timeout",
-                                "response": f"Agent {agent_id + 1} timed out or failed: {str(e)}",
-                                "question": agent_question,
+                                "type": "status",
+                                "data": {
+                                    "description": f"{status_icon} Agent {i+1}/{num_agents} completed\nFocus: {question_preview}...",
+                                    "done": False,
+                                },
                             }
                         )
-                        
-                        if __event_emitter__:
-                            asyncio.create_task(
-                                __event_emitter__(
-                                    {
-                                        "type": "status",
-                                        "data": {
-                                            "description": f"⚠️ Agent {agent_id + 1} timeout/error: {str(e)[:50]}...",
-                                            "done": False,
-                                        },
-                                    }
-                                )
-                            )
-                            await asyncio.sleep(0.01)
+                except Exception as e:
+                    agent_results.append(
+                        {
+                            "agent_id": i,
+                            "status": "error",
+                            "response": f"Agent {i + 1} failed: {str(e)}",
+                            "question": questions[i],
+                        }
+                    )
+                    
+                    if __event_emitter__:
+                        await __event_emitter__(
+                            {
+                                "type": "status",
+                                "data": {
+                                    "description": f"❌ Agent {i + 1} error: {str(e)[:50]}...",
+                                    "done": False,
+                                },
+                            }
+                        )
 
             agent_results.sort(key=lambda x: x["agent_id"])
 
