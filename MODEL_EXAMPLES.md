@@ -160,37 +160,43 @@ Visit https://docs.anthropic.com/en/docs/models-overview for the latest model na
 
 ## Google Gemini
 
-Google uses simple model names (works via OpenAI-compatible endpoint).
+**⚠️ IMPORTANT**: For the easiest setup, use Google models through **OpenRouter** instead of directly!
 
-### Available Models
+### Recommended: Via OpenRouter (Easiest)
 
+```python
+HEAVY_THINKING_PROVIDER = "openrouter"
+HEAVY_THINKING_API_KEY = "sk-or-v1-..."
+HEAVY_THINKING_MODEL = "google/gemini-2.0-flash-exp"
+# Works out of the box! ✅
 ```
-gemini-2.0-flash-exp            # Latest experimental, fast
-gemini-2.5-flash                # Recommended: fast, good quality
-gemini-2.5-pro                  # Best quality, advanced reasoning
-gemini-1.5-flash                # Stable version, reliable
-gemini-1.5-pro                  # Previous gen, still great
+
+**Available Models via OpenRouter**:
+```
+google/gemini-2.0-flash-exp     # Latest experimental, fast, often free
+google/gemini-2.5-flash         # Recommended: fast, good quality
+google/gemini-2.5-pro           # Best quality, advanced reasoning
+google/gemini-1.5-flash         # Stable version, reliable
+google/gemini-1.5-pro           # Previous gen, still great
 ```
 
-### Configuration Example (Recommended)
+### Advanced: Direct Google API (Requires More Setup)
+
+If you must use Google API directly (not recommended for beginners):
 
 ```python
 HEAVY_THINKING_PROVIDER = "google"
 HEAVY_THINKING_API_KEY = "AIza..."
 HEAVY_THINKING_MODEL = "gemini-2.5-flash"
-# Base URL auto-set to: https://generativelanguage.googleapis.com/v1beta/openai/
+# Base URL auto-set to: https://generativelanguage.googleapis.com/v1beta/openai
+# NOTE: May require additional configuration
 ```
 
-### Configuration Example (Vertex AI - Advanced)
-
-If you need to use Google Cloud Vertex AI instead:
-
-```python
-HEAVY_THINKING_PROVIDER = "custom"
-HEAVY_THINKING_API_KEY = "your-gcp-key"
-HEAVY_THINKING_BASE_URL = "https://YOUR-REGION-aiplatform.googleapis.com/v1/openai"
-HEAVY_THINKING_MODEL = "gemini-2.5-flash"
-```
+**Why OpenRouter is Better for Google Models**:
+- ✅ Works immediately without extra setup
+- ✅ Unified billing across all models
+- ✅ Better error messages
+- ✅ No Google Cloud Platform complexity
 
 ### Model Selection Guide
 

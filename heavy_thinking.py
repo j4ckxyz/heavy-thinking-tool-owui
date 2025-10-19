@@ -64,7 +64,8 @@ class Tools:
         elif provider == "anthropic":
             base_url = "https://api.anthropic.com/v1"
         elif provider == "google":
-            base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+            # Google Gemini via OpenAI-compatible endpoint
+            base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
         elif provider == "custom":
             base_url = self.valves.HEAVY_THINKING_BASE_URL
             if not base_url:
@@ -164,10 +165,14 @@ Provide a complete, detailed response."""
             }
 
         except Exception as e:
+            error_msg = str(e)
+            if "google" in self.valves.HEAVY_THINKING_PROVIDER.lower():
+                error_msg += "\n\nNote: For easier Google Gemini access, use provider='openrouter' with model='google/gemini-2.5-flash' instead of direct Google API."
+            
             return {
                 "agent_id": agent_id,
                 "status": "error",
-                "response": f"Agent {agent_id + 1} failed: {str(e)}",
+                "response": f"Agent {agent_id + 1} failed: {error_msg}",
                 "question": question,
             }
 

@@ -115,10 +115,18 @@ HEAVY_THINKING_MODEL = "claude-3-5-sonnet-20241022"
 ```
 
 #### Google Gemini
+**Recommended**: Use via OpenRouter for easier setup:
+```python
+HEAVY_THINKING_PROVIDER = "openrouter"
+HEAVY_THINKING_API_KEY = "sk-or-v1-..."
+HEAVY_THINKING_MODEL = "google/gemini-2.0-flash-exp"
+```
+
+Or use direct Google API (advanced):
 ```python
 HEAVY_THINKING_PROVIDER = "google"
-HEAVY_THINKING_API_KEY = "..."
-HEAVY_THINKING_MODEL = "gemini-2.0-flash-exp"
+HEAVY_THINKING_API_KEY = "AIza..."
+HEAVY_THINKING_MODEL = "gemini-2.5-flash"
 ```
 
 #### Custom OpenAI-Compatible API
